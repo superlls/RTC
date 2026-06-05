@@ -12,9 +12,9 @@ RTC 是一个三层 monorepo，用于接入火山引擎 AI 音视频互动方案
 
 | 目录 | 状态 | 说明 |
 |------|------|------|
-| `agent/` | ✅ 已完成 | Agent 平台端服务，Hono + LangGraph + Kimi，已部署至 8.152.220.24:3000 |
-| `backend/` | 🚧 待开发 | Token 生成 + 火山 OpenAPI 编排（StartVoiceChat / StopVoiceChat） |
-| `frontend/` | 🚧 待开发 | React + Vite + @volcengine/rtc 语音通话 UI |
+| `agent/` | ✅ 已完成 | Agent 平台端服务，Hono + LangGraph + Kimi，开发阶段本地启动 :3000 |
+| `backend/` | 🚧 待开发 | Token 生成 + 火山 OpenAPI 编排，开发端口 :3001 |
+| `frontend/` | 🚧 待开发 | React + Vite + @volcengine/rtc 语音通话 UI，开发端口 :3002 |
 | `docs/` | 设计文档与实施计划 | |
 | `references/` | 火山引擎参考文档、Token 生成示例、OpenAPI 文档 | |
 
@@ -35,6 +35,16 @@ npx vitest run tests/sse-format.test.ts  # 运行单个测试文件
 ### Backend / Frontend
 
 尚未搭建，计划均使用 TypeScript + ESM。Backend 用 Hono + Vitest，Frontend 用 Vite + React。
+
+### 开发端口与启动
+
+| 服务 | 端口 | 启动命令 |
+|------|------|----------|
+| Agent | 3000 | `cd agent && npm run dev` |
+| Backend | 3001 | `cd backend && npm run dev` |
+| Frontend | 3002 | `cd frontend && npm run dev` |
+
+> 启动前先杀占用端口的进程：`lsof -ti:<端口> | xargs kill -9 2>/dev/null`
 
 ## 技术栈
 
@@ -75,7 +85,7 @@ Agent `.env`（参考 `agent/.env.example`）:
 Backend 计划使用的环境变量:
 - `RTC_APP_ID` / `RTC_APP_KEY`（RTC 鉴权）
 - `VOLC_ACCESS_KEY` / `VOLC_SECRET_KEY`（火山 OpenAPI 签名）
-- `AGENT_URL` / `AGENT_API_KEY` / `AGENT_MODEL`（Agent 服务连接）
+- `AGENT_URL`（开发阶段：`http://localhost:3000/v1/chat-stream`）/ `AGENT_API_KEY` / `AGENT_MODEL`
 
 ## 关键设计文档
 
