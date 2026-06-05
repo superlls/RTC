@@ -4,7 +4,16 @@
 
 **Goal:** 在已有 Agent 端基础上，实现 Backend（Hono + TS）和 Frontend（React + Vite + TS），完成真人用户与 AI 的实时语音对话。
 
-**Architecture:** 后端生成 RTC Token、签名调用火山 OpenAPI（StartVoiceChat / StopVoiceChat）；前端用 @volcengine/rtc SDK 进房、采集音频、与 AI 实时对话。三个服务（Agent、Backend、Frontend）各自独立。
+**Architecture:** 后端生成 RTC Token、签名调用火山 OpenAPI（StartVoiceChat / StopVoiceChat）；前端用 @volcengine/rtc SDK 进房、采集音频、与 AI 实时对话。三个服务（Agent :3000、Backend :3001、Frontend :3002）各自独立，开发阶段全部本地启动。
+
+**开发端口分配:**
+| 服务 | 端口 | 启动方式 |
+|------|------|----------|
+| Agent | 3000 | `cd agent && npm run dev` |
+| Backend | 3001 | `cd backend && npm run dev` |
+| Frontend | 3002 | `cd frontend && npm run dev` |
+
+> **重要：** 每次启动服务前，先杀死占用对应端口的进程：`lsof -ti:<端口> | xargs kill -9 2>/dev/null; `
 
 **Tech Stack:** Backend: Hono + @hono/node-server + TypeScript；Frontend: React + Vite + TypeScript + @volcengine/rtc
 
@@ -116,7 +125,8 @@ RTC_APP_ID=
 RTC_APP_KEY=
 VOLC_ACCESS_KEY=
 VOLC_SECRET_KEY=
-AGENT_URL=
+# 开发阶段用本地 Agent（RTC/agent/ 目录，端口 3000）
+AGENT_URL=http://localhost:3000/v1/chat-stream
 AGENT_API_KEY=
 AGENT_MODEL=
 PORT=3001
@@ -128,7 +138,8 @@ RTC_APP_ID=YOUR_RTC_APP_ID
 RTC_APP_KEY=YOUR_RTC_APP_KEY
 VOLC_ACCESS_KEY=YOUR_VOLC_ACCESS_KEY
 VOLC_SECRET_KEY=YOUR_VOLC_SECRET_KEY
-AGENT_URL=http://8.152.220.24:3000/v1/chat-stream
+# 开发阶段指向本地 Agent（先 cd agent && npm run dev 启动）
+AGENT_URL=http://localhost:3000/v1/chat-stream
 AGENT_API_KEY=YOUR_AGENT_API_KEY
 AGENT_MODEL=kimi-k2.6
 PORT=3001
@@ -172,7 +183,11 @@ serve({
 
 - [ ] **Step 6: 安装依赖并验证启动**
 
-Run: `cd backend && npm install && npm run dev`
+```bash
+# 先杀死占用 3001 端口的进程
+lsof -ti:3001 | xargs kill -9 2>/dev/null
+cd backend && npm install && npm run dev
+```
 
 预期：终端输出 `RTC Backend 服务启动，端口: 3001`
 
@@ -924,6 +939,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: {
+    port: 3002,
     proxy: {
       "/api": {
         target: "http://localhost:3001",
@@ -936,9 +952,13 @@ export default defineConfig({
 
 - [ ] **Step 4: 验证前端启动**
 
-Run: `cd frontend && npm run dev`
+```bash
+# 先杀死占用 3002 端口的进程
+lsof -ti:3002 | xargs kill -9 2>/dev/null
+cd frontend && npm run dev
+```
 
-预期：浏览器打开 Vite 默认页面
+预期：浏览器打开 `http://localhost:3002`，显示 Vite 默认页面
 
 - [ ] **Step 5: 提交**
 
@@ -1221,12 +1241,20 @@ createRoot(document.getElementById("root")!).render(<App />);
 rm -f frontend/src/assets/react.svg frontend/public/vite.svg frontend/src/index.css
 ```
 
-- [ ] **Step 5: 启动前后端，端到端测试**
+- [ ] **Step 5: 启动三个服务，端到端测试**
 
-终端 1: `cd backend && npm run dev`
-终端 2: `cd frontend && npm run dev`
+```bash
+# 先杀死所有占用端口的进程
+lsof -ti:3000 | xargs kill -9 2>/dev/null
+lsof -ti:3001 | xargs kill -9 2>/dev/null
+lsof -ti:3002 | xargs kill -9 2>/dev/null
+```
 
-打开浏览器，点击"开始通话"，预期：
+终端 1: `cd agent && npm run dev`（Agent 服务 :3000）
+终端 2: `cd backend && npm run dev`（Backend 服务 :3001）
+终端 3: `cd frontend && npm run dev`（Frontend 服务 :3002）
+
+打开浏览器 `http://localhost:3002`，点击"开始通话"，预期：
 1. 按钮变为"连接中..."
 2. 变为"挂断"并开始计时
 3. 麦克风采集开始（浏览器会弹麦克风权限）

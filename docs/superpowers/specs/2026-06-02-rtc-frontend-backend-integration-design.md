@@ -2,7 +2,7 @@
 
 ## 概述
 
-在已部署的 Agent 端（8.152.220.24:3000，Hono + LangGraph）基础上，集成前端和后端，实现真人用户与 AI 的实时语音对话。
+在已有 Agent 端（Hono + LangGraph）基础上，集成前端和后端，实现真人用户与 AI 的实时语音对话。开发阶段三个服务全部本地启动：Agent :3000、Backend :3001、Frontend :3002。
 
 ## 架构
 
@@ -28,15 +28,17 @@
                                                         ▼
                                                 ┌──────────────────┐
                                                 │     Agent        │
-                                                │  8.152.220.24    │
+                                                │  localhost:3000  │
                                                 │  Hono + LangGraph│
                                                 └──────────────────┘
 ```
 
-三个服务各自独立：
-- **Frontend（本地 dev）** — 用户界面 + RTC SDK
-- **Backend（本地 dev）** — Token 生成 + 火山 OpenAPI 签名调用
-- **Agent（已部署）** — 不动，火山平台通过 CustomLLM 模式直接调用
+三个服务各自独立，开发阶段全部本地启动：
+- **Frontend :3002** — 用户界面 + RTC SDK
+- **Backend :3001** — Token 生成 + 火山 OpenAPI 签名调用
+- **Agent :3000** — 本地启动（`cd agent && npm run dev`），火山平台通过 CustomLLM 模式调用
+
+> **启动前先杀端口：** `lsof -ti:<端口> | xargs kill -9 2>/dev/null`
 
 ## 通话流程
 
@@ -123,7 +125,8 @@ RTC_APP_ID=YOUR_RTC_APP_ID
 RTC_APP_KEY=YOUR_RTC_APP_KEY
 VOLC_ACCESS_KEY=YOUR_VOLC_ACCESS_KEY
 VOLC_SECRET_KEY=YOUR_VOLC_SECRET_KEY
-AGENT_URL=http://8.152.220.24:3000/v1/chat-stream
+# 开发阶段用本地 Agent
+AGENT_URL=http://localhost:3000/v1/chat-stream
 AGENT_API_KEY=YOUR_AGENT_API_KEY
 AGENT_MODEL=kimi-k2.6
 PORT=3001
