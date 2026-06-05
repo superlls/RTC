@@ -1,5 +1,6 @@
 import { useRef, useCallback } from "react";
-import { createEngine, IRTCEngine } from "@volcengine/rtc";
+import VERTC from "@volcengine/rtc";
+import type { IRTCEngine } from "@volcengine/rtc";
 
 export function useRTC() {
   const engineRef = useRef<IRTCEngine | null>(null);
@@ -7,7 +8,7 @@ export function useRTC() {
   const join = useCallback(
     async (params: { appId: string; token: string; roomId: string; userId: string }) => {
       // 创建 RTC 引擎实例
-      const engine = createEngine(params.appId);
+      const engine = VERTC.createEngine(params.appId);
       engineRef.current = engine;
 
       // 加入房间，自动发布音频，自动订阅音频，不订阅视频
