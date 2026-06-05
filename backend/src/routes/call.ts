@@ -48,6 +48,7 @@ callRouter.post("/api/start", async (c) => {
         Url: config.agentUrl,
         APIKey: config.agentApiKey,
         ModelName: config.agentModel,
+        Feature: '{"Http":true}',
         SystemMessages: [],
         HistoryLength: 10,
         Temperature: 0.1,
@@ -72,6 +73,7 @@ callRouter.post("/api/start", async (c) => {
     AgentConfig: {
       TargetUserId: [userId],
       UserId: agentUserId,
+      WelcomeMessage: "你好，我是你的 AI 助手，有什么可以帮你的吗？",
       EnableConversationStateCallback: false,
       VoicePrint: { MetaList: null, VoicePrintList: null },
     },
