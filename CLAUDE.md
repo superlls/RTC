@@ -12,9 +12,9 @@ RTC 是一个三层 monorepo，用于接入火山引擎 AI 音视频互动方案
 
 | 目录 | 状态 | 说明 |
 |------|------|------|
-| `agent/` | ✅ 已完成 | Agent 平台端服务，Hono + LangGraph + Kimi，开发阶段本地启动 :3000 |
-| `backend/` | 🚧 待开发 | Token 生成 + 火山 OpenAPI 编排，开发端口 :3001 |
-| `frontend/` | 🚧 待开发 | React + Vite + @volcengine/rtc 语音通话 UI，开发端口 :3002 |
+| `agent/` | ✅ 已完成 | Agent 平台端服务，Hono + LangGraph + Kimi，公网部署于 `8.152.220.24:3000` |
+| `backend/` | ✅ 已完成 | Token 生成 + 火山 OpenAPI 编排，开发端口 :3001 |
+| `frontend/` | ✅ 已完成 | React + Vite + @volcengine/rtc 语音通话 UI，开发端口 :3002 |
 | `docs/` | 设计文档与实施计划 | |
 | `references/` | 火山引擎参考文档、Token 生成示例、OpenAPI 文档 | |
 
@@ -32,9 +32,21 @@ npm test             # 运行所有测试（vitest）
 npx vitest run tests/sse-format.test.ts  # 运行单个测试文件
 ```
 
-### Backend / Frontend
+### Backend（在 `backend/` 目录下）
 
-尚未搭建，计划均使用 TypeScript + ESM。Backend 用 Hono + Vitest，Frontend 用 Vite + React。
+```bash
+npm run dev          # 开发模式（tsx watch 热重载）
+npm run build        # TypeScript 编译到 dist/
+npm start            # 生产模式启动
+npm test             # 运行所有测试（vitest）
+```
+
+### Frontend（在 `frontend/` 目录下）
+
+```bash
+npm run dev          # 开发模式（Vite，端口 3002）
+npm run build        # 生产构建
+```
 
 ### 开发端口与启动
 
@@ -50,6 +62,8 @@ npx vitest run tests/sse-format.test.ts  # 运行单个测试文件
 
 - **语言**: TypeScript（ESM, `"type": "module"`）
 - **HTTP 框架**: Hono + @hono/node-server（Agent 和 Backend 共用）
+- **前端框架**: React + Vite
+- **RTC SDK**: @volcengine/rtc（默认导出为 `VERTC` 类，`VERTC.createEngine()` 创建引擎）
 - **Agent 框架**: LangGraph TS（@langchain/langgraph）
 - **LLM**: Kimi（月之暗面），通过 @langchain/openai 的 ChatOpenAI 适配（OpenAI 兼容 API）
 - **默认模型**: kimi-k2.6
@@ -82,10 +96,47 @@ Agent `.env`（参考 `agent/.env.example`）:
 - `QWEATHER_API_KEY` / `QWEATHER_API_HOST`（天气工具）
 - `TAVILY_API_KEY`（网页搜索工具）
 
-Backend 计划使用的环境变量:
+Backend `.env`（参考 `backend/.env.example`）:
 - `RTC_APP_ID` / `RTC_APP_KEY`（RTC 鉴权）
 - `VOLC_ACCESS_KEY` / `VOLC_SECRET_KEY`（火山 OpenAPI 签名）
-- `AGENT_URL`（开发阶段：`http://localhost:3000/v1/chat-stream`）/ `AGENT_API_KEY` / `AGENT_MODEL`
+- `AGENT_URL`（公网 Agent：`http://8.152.220.24:3000/v1/chat-stream`）/ `AGENT_API_KEY` / `AGENT_MODEL`
+- `PORT`（默认 3001）
+
+> **注意：** `AGENT_URL` 必须是火山平台可达的公网地址，不能用 `localhost`。火山 RTC 平台通过此 URL 回调 Agent 服务。
+
+## Backend 架构
+
+```
+Frontend POST /api/start → Backend 生成 Token + 签名调用 StartVoiceChat → 火山 RTC 平台
+Frontend POST /api/stop  → Backend 签名调用 StopVoiceChat → 火山 RTC 平台
+```
+
+模块结构：
+```
+backend/src/
+├── index.ts              # Hono 入口，挂载路由，CORS
+├── config.ts             # 环境变量读取
+├── routes/call.ts        # /api/start 和 /api/stop 路由
+└── lib/
+    ├── token.ts          # RTC Token 生成（HMAC-SHA256，火山官方算法）
+    ├── buffer-writer.ts  # Token 序列化用的二进制写入工具
+    └── volcengine-api.ts # 火山 OpenAPI V4 签名 + fetch 调用
+```
+
+## Frontend 架构
+
+```
+frontend/src/
+├── main.tsx              # React 入口
+├── App.tsx               # 主页面（通话按钮 + 状态显示）
+├── App.css               # 样式
+├── types.ts              # CallStatus, StartCallResponse
+└── hooks/
+    ├── useRTC.ts         # 封装 @volcengine/rtc SDK（进房/离房/音频采集）
+    └── useCall.ts        # 封装通话流程（后端 API + RTC + 状态机 + 计时器）
+```
+
+Vite 开发代理：`/api/*` → `http://localhost:3001`（后端）
 
 ## 关键设计文档
 
