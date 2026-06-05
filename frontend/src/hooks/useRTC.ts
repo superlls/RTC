@@ -33,8 +33,10 @@ export function useRTC() {
     const engine = engineRef.current;
     if (!engine) return;
 
-    // 离开房间并释放引擎引用
+    // 停止麦克风采集、离开房间、销毁引擎
+    await engine.stopAudioCapture();
     await engine.leaveRoom();
+    engine.destroyEngine();
     engineRef.current = null;
   }, []);
 

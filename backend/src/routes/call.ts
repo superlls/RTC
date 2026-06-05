@@ -104,7 +104,17 @@ callRouter.post("/api/start", async (c) => {
 });
 
 callRouter.post("/api/stop", async (c) => {
-  const { taskId, roomId } = await c.req.json<{ taskId: string; roomId: string }>();
+  let body: { taskId?: string; roomId?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "请求体不是合法的 JSON" }, 400);
+  }
+
+  const { taskId, roomId } = body;
+  if (!taskId || !roomId) {
+    return c.json({ error: "缺少必填字段: taskId, roomId" }, 400);
+  }
 
   const result = await callVolcAPI({
     ak: config.volcAccessKey,
